@@ -47,7 +47,7 @@ def get_phon_sim(prev_mfcc, mfcc):
 	return phon_sim
 
 def get_sem_sim(embeddings_dict, word, prev_word):
-	if word in embeddings_dict and prev_word in embeddings_dict:
+	if word in embeddings_dict and prev_word in embeddings_dict and prev_word != 'NA':
 		sem_sim = spatial.distance.euclidean(np.asarray(embeddings_dict[word], "float32"), np.asarray(embeddings_dict[prev_word], "float32"))
 		prev = word
 	else:
