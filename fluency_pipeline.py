@@ -1,5 +1,3 @@
-## Usage python3 fluency_pipeline.py all_results.csv score.csv *.txt
-
 import spacy
 from scipy import spatial
 from pydub import AudioSegment
@@ -29,7 +27,7 @@ def get_wordVec(WORDVEC):
     return embeddings_dict
 
 def get_mfcc(data_wav, start, end, fs):
-	wav_crop = data_wav[float(start)*1000 : float(end)*1000]
+	wav_crop = data_wav[round(float(start)*1000) : round(float(end)*1000)]
 	wav_crop_samples = wav_crop.get_array_of_samples()
 	mfcc_val = librosa.feature.mfcc(y=np.array(wav_crop_samples).astype(np.float32), sr=fs, n_mfcc=13)
 	mfcc_transpose = np.transpose(mfcc_val)
@@ -57,6 +55,9 @@ def get_sem_sim(embeddings_dict, word, prev_word):
 	return sem_sim
 
 def get_dur_pos_phon_sem(file, data_wav, embeddings_dict, fs, LETTER):
+	FILLERS = ['um','uh','eh']
+	BACKCHANNELS = ['hm', 'yeah', 'mhm', 'huh']
+
 	newdf = []
 	prev_mfcc = np.array([], dtype=np.float64)
 	infile = open(file, 'r')
@@ -64,7 +65,6 @@ def get_dur_pos_phon_sem(file, data_wav, embeddings_dict, fs, LETTER):
 	order = 0
 	prev_word = 'NA'
 	phon_sim = 0
-	prev_end = 0 
 
 	for line in infile:
 		if not (line.startswith('\\')):
@@ -78,27 +78,23 @@ def get_dur_pos_phon_sem(file, data_wav, embeddings_dict, fs, LETTER):
 						phon_sim = get_phon_sim(prev_mfcc, mfcc)
 						sem_sim = get_sem_sim(embeddings_dict, data[2].lower(), prev_word)
 						order +=1
-						#temp_pause_dur =  float(data[0]) - float(prev_end)
-						#pause_dur += word_dur
 						newdf.append([file, data[0], data[1], data[2].lower(), order, word_dur, pause_dur, doc[0].pos_, doc[0].lemma_, phon_sim, sem_sim])
-						#prev_mfcc = mfcc
+						prev_mfcc = mfcc
 						prev_word = data[2].lower()
 						word_dur = 0
 						pause_dur = 0
-						#prev_end = data[1]
+						
 				else: 
 					word_dur = float(data[1]) - float(data[0])
-					#temp_pause_dur =  float(data[1]) - float(prev_end)
 					pause_dur += word_dur
-					#prev_end = data[0]
+					
 			else:
 				word_dur = float(data[1]) - float(data[0])
-				#temp_pause_dur =  float(data[1]) - float(prev_end)
 				pause_dur += word_dur
 					
 
 	df = pd.DataFrame(newdf, columns=['file','start','end','word','order','word_dur','prev_pause_dur','POS','lemma', 'phon_sim', 'sem_sim'])
-	prev_end = 0
+	
 	return df
 
 def count_f_words(df, LETTER):
@@ -127,11 +123,9 @@ def get_phondict():
 
 def main(args):
 	LEXICAL_LOOKUP = './all_measures_raw.csv'
-	FILLERS = ['um','uh','eh']
-	BACKCHANNELS = ['hm', 'yeah', 'mhm', 'huh']
 	LETTER = args.letter
 	AUDIO_DIR = args.audio_folder
-	WORDVEC = args.glove_folder
+	WORDVEC = args.glove_folder +'/glove.6B.300d.txt'
 
 	measureDict = pd.read_csv(LEXICAL_LOOKUP)
 	phonDf = get_phondict()
@@ -142,13 +136,13 @@ def main(args):
 	else:
 		filelist = glob.glob(args.FA_folder+'/*.word')
 
-	outFile.writelines('filename,total_words,proper_noun,numerics,repetitions\n')
 	with open(args.score_file, 'w') as outFile:
+		outFile.writelines('filename,total_words,proper_noun,numerics,repetitions\n')
 		for file in filelist:
 			print(file, " is being processed...")
 			filename = file.split('.')[0]
 			data_wav, fs = read_audio(filename, AUDIO_DIR)
-			data_wav = np.array([], dtype=np.float64)
+			
 			df = get_dur_pos_phon_sem(file, data_wav, embeddings_dict, fs, LETTER)
 			score, propn, number,repetition = count_f_words(df, LETTER)
 			df_lexical = add_lexical(df, phonDf, measureDict)
