@@ -122,7 +122,7 @@ def get_phondict():
 	return phonDf
 
 def main(args):
-	LEXICAL_LOOKUP = './all_measures_raw.csv'
+	LEXICAL_LOOKUP = os.path.join(os.path.dirname(__file__),'all_measures_raw.csv')
 	LETTER = args.letter
 	AUDIO_DIR = args.audio_folder
 	WORDVEC = args.glove_folder +'/glove.6B.300d.txt'
