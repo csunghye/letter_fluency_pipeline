@@ -41,7 +41,7 @@ def read_audio(filename, audio_dir):
 
 def get_phon_sim(prev_mfcc, mfcc):
 	if np.isnan(prev_mfcc).all() != True :
-		phon_sim = dtw(prev_mfcc, mfcc, keep_internals=True, step_pattern='asymmetric',window_args = {'window_size':100}, open_end=True).normalizedDistance
+		phon_sim = dtw(prev_mfcc, mfcc, step_pattern='asymmetric',window_args = {'window_size':100}, open_end=True).normalizedDistance
 	else:
 		phon_sim = np.nan
 	return phon_sim
