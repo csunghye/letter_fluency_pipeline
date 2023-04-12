@@ -34,7 +34,7 @@ def get_mfcc(data_wav, start, end, fs):
 	return mfcc_transpose
 
 def read_audio(filename, audio_dir):
-	audio_name = filename.split('/')[-1][:-4]+'.wav'
+	audio_name = filename.split('/')[-1]+'.wav'
 	data_wav = AudioSegment.from_wav(audio_dir+'/'+audio_name)
 	fs = np.array(data_wav.frame_rate)
 	return data_wav, fs
